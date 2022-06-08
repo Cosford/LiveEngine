@@ -1,5 +1,15 @@
 import mariadb
 import random
+import logging
+
+log_format = '[%(asctime)s]\t[%(name)s]\t[%(levelname)s]\t[%(message)s]'
+logger = logging.getLogger(__name__)
+logger.setLevel('DEBUG')
+file_handler = logging.FileHandler("liveengine.log", "w")
+formatter = logging.Formatter(log_format)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+logger.info("Starting logging...")
 
 class Core:
     def __init__(self, db_info):
@@ -21,32 +31,33 @@ class Core_DB:
         
     def connect(self):
         if self.connection:
-            print("Connection already open!")
+            logger.warn("Failed to connect to DB - connection already open!")
             return False
-            
-        self.connection = mariadb.connect(**conn_params)
-        if not self.connection:
-            print("Connection failed")
+        
+        try:
+            self.connection = mariadb.connect(**conn_params)
+        except mariadb.OperationalError:
+            logger.warn("Failed to connect to DB.")
             return False
 
-        self.write_log("Core started", "")
+        logger.warn("Core started")
+        self.write_db_log("Core started", "")
         
-        print("Connected")
         return True
         
     def disconnect(self):
         if not self.connection:
-            print("No connection to close!")
+            logger.warn("Failed to disconnect from DB - no active connection")
             return False
         
-        self.write_log("Core stopped", "")
+        self.write_db_log("Core stopped", "")
         
         self.connection.close()
         return True
     
-    def write_log(self, log_text, log_data):
+    def write_db_log(self, log_text, log_data):
         if not self.connection:
-            print("No connection to write log to!")
+            logger.warn("Failed to write to DB log - no active connection")
             return False
         
         cursor = self.connection.cursor()
