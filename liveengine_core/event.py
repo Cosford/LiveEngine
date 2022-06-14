@@ -1,4 +1,6 @@
-class Event:
+from liveengine_core.message import *
+
+class Event(Message):
     def __init__(self, **kwargs):
         pass
     
